@@ -1,4 +1,6 @@
 # Assignment3-Rust
+3210103818  
+杨朗骐
 # 测试
 cargo run  
 其它测试不再赘述，这里说明一下 Exercise 2: MyRc 的测试  
