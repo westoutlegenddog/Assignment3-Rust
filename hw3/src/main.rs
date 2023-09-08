@@ -39,9 +39,10 @@ fn test_exercise_1() {
 */
 use std::alloc;
 use std::ops::Deref;
+use std::ptr::NonNull;
 struct MyRc<T> {
     value: T,
-    ref_count: *mut usize,
+    ref_count: NonNull<usize>,//不能用裸指针，故使用NonNull
 }
 
 impl<T> MyRc<T> {
@@ -52,7 +53,7 @@ impl<T> MyRc<T> {
             *(cnt_ptr as *mut usize) = 1usize;
             MyRc {
                 value,
-                ref_count: cnt_ptr as *mut usize,
+                ref_count: NonNull::new_unchecked(cnt_ptr as *mut usize),
             }
         }
     }
@@ -61,7 +62,7 @@ impl<T> MyRc<T> {
         T: Clone,
     {
         unsafe {
-            *self.ref_count += 1;
+            *self.ref_count.as_ptr() += 1;
         }
         MyRc {
             value: self.value.clone(),
@@ -69,7 +70,7 @@ impl<T> MyRc<T> {
         }
     }
     fn strong_count(&self) -> usize {
-        unsafe { *(self.ref_count) }
+        unsafe { *self.ref_count.as_ptr() }
     }
 }
 impl<T> Deref for MyRc<T> {
@@ -81,12 +82,12 @@ impl<T> Deref for MyRc<T> {
 impl<T> Drop for MyRc<T> {
     fn drop(&mut self) {
         unsafe {
-            if (*self.ref_count) <= 1 {
+            if (*self.ref_count.as_ptr()) <= 1 {
                 let cnt_layout = alloc::Layout::new::<usize>();
-                alloc::dealloc(self.ref_count as *mut u8, cnt_layout);
+                alloc::dealloc(self.ref_count.as_ptr() as *mut u8, cnt_layout);
                 println!("MyRc Dropped")
             } else {
-                (*(self.ref_count)) -= 1;
+                (*self.ref_count.as_ptr()) -= 1;
             }
         }
     }
